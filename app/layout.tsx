@@ -7,12 +7,14 @@ import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import { getServerSideConfig } from "./config/server";
+const brandName = process.env.BRAND_NAME?.trim();
+const appTitle = brandName || "NextChat";
 
 export const metadata: Metadata = {
-  title: "NextChat",
+  title: appTitle,
   description: "Your personal ChatGPT Chat Bot.",
   appleWebApp: {
-    title: "NextChat",
+    title: appTitle,
     statusBarStyle: "default",
   },
 };

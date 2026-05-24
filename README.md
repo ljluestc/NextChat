@@ -180,6 +180,11 @@ Access password, separated by comma.
 
 Your openai api key, join multiple api keys with comma.
 
+### `BRAND_NAME` (optional)
+
+Customize the website title and sidebar brand name.
+If set, the subtitle displays `Powered by NextChat`.
+
 ### `BASE_URL` (optional)
 
 > Default: `https://api.openai.com`

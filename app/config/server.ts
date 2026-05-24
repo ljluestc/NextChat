@@ -96,6 +96,7 @@ declare global {
       DEFAULT_INPUT_TEMPLATE?: string;
 
       ENABLE_MCP?: string; // enable mcp functionality
+      BRAND_NAME?: string; // customize website/app brand name
     }
   }
 }
@@ -272,6 +273,7 @@ export const getServerSideConfig = () => {
     customModels,
     defaultModel,
     visionModels,
+    brandName: process.env.BRAND_NAME?.trim(),
     allowedWebDavEndpoints,
     enableMcp: process.env.ENABLE_MCP === "true",
   };

@@ -32,6 +32,7 @@ import dynamic from "next/dynamic";
 import { Selector, showConfirm } from "./ui-lib";
 import clsx from "clsx";
 import { isMcpEnabled } from "../mcp/actions";
+import { getClientConfig } from "../config/client";
 
 const DISCOVERY = [
   { name: Locale.Plugin.Name, path: Path.Plugins },
@@ -231,7 +232,13 @@ export function SideBar(props: { className?: string }) {
   const navigate = useNavigate();
   const config = useAppConfig();
   const chatStore = useChatStore();
+  const clientConfig = useMemo(() => getClientConfig(), []);
   const [mcpEnabled, setMcpEnabled] = useState(false);
+  const brandName = clientConfig?.brandName?.trim();
+  const sideBarTitle = brandName || "NextChat";
+  const sideBarSubTitle = brandName
+    ? "Powered by NextChat"
+    : "Build your own AI assistant.";
 
   useEffect(() => {
     // 检查 MCP 是否启用
@@ -250,8 +257,8 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
-        subTitle="Build your own AI assistant."
+        title={sideBarTitle}
+        subTitle={sideBarSubTitle}
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
       >

@@ -40,6 +40,7 @@ export const getBuildConfig = () => {
     buildMode,
     isApp,
     template: process.env.DEFAULT_INPUT_TEMPLATE ?? DEFAULT_INPUT_TEMPLATE,
+    brandName: process.env.BRAND_NAME?.trim() ?? "",
   };
 };
 
