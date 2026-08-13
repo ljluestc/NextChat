@@ -1,6 +1,6 @@
-## feat: support multiple app windows with independent server configurations
+## feat: 支持多窗口，每个窗口拥有独立的服务器配置
 
-Closes #4886
+关闭 #4886
 
 #### 💻 变更类型 | Change Type
 
@@ -17,33 +17,33 @@ Closes #4886
 
 #### 🔀 变更说明 | Description of Change
 
-**Support multiple app windows, each with an independent server configuration.**
+**支持同时打开多个应用窗口，每个窗口拥有独立的服务器配置。**
 
-The desktop app previously ran as a single window, forcing users who switch between backends (e.g. a local vLLM server and an online OneAPI service) to repeatedly re-enter server settings. This PR adds a **New Window** action so each window maintains its own endpoint, API key, provider, and model settings. Because all windows live in one app process, this also avoids the crashes reported when running separate NextChat instances under Windows Sandbox / Sandboxie (WebView2 user-data-dir contention).
+此前桌面端只能运行单一窗口。需要在多个后端之间切换的用户（例如本地 vLLM 服务器和线上 OneAPI 服务）不得不反复手动修改服务器设置。本 PR 新增「新窗口」功能，使每个窗口都可以独立维护自己的接口地址、API Key、服务提供商和模型设置。由于所有窗口运行在同一个应用进程内，还规避了在 Windows Sandbox / Sandboxie 中启动多个 NextChat 实例时的崩溃问题（多个进程争抢同一个 WebView2 用户数据目录所致）。
 
-Changes:
+具体改动：
 
-- **New window creation (desktop only):** a "New Window" button in the sidebar footer (rendered only inside Tauri; web/PWA builds unchanged) plus a **Ctrl+Shift+N** hotkey. Windows are created via the Tauri `WebviewWindow` API with stable, recycled labels (`window-2`, `window-3`, …) — the smallest free index is chosen, so reopening a second window after a restart restores the exact configuration it had before. Enabled `window-create` in `src-tauri/Cargo.toml` and `window.create: true` in the `tauri.conf.json` allowlist.
-- **Per-window state isolation:** new `app/utils/window.ts` reads the window label synchronously from the `window_label` query param at module init (stores hydrate at import time), falling back to `main` for the first window and web builds. `app/utils/indexedDB-storage.ts` prefixes every persisted zustand store key with the window's namespace, uniformly isolating access/server config, app config, chat, masks, prompts, sync, and MCP stores per window — and preventing concurrent windows from racing on the same IndexedDB keys.
-- **Backward compatibility:** the main window keeps the historical unprefixed storage keys, so all existing user data (settings, chat history) is preserved untouched. `clear()` from a secondary window only clears its own namespace; clearing from the main window remains a global reset.
-- **Typing & i18n:** extended the `__TAURI__` global typing in `app/global.d.ts` with the `window` module (`getAll`, `WebviewWindow`); added `Locale.UI.NewWindow` in `en` and `cn` (other locales fall back to English); new `new-window.svg` icon in the existing 16×16 style.
+- **新窗口创建（仅桌面端）：** 在侧边栏底部新增「新窗口」按钮（仅在 Tauri 应用内渲染，Web/PWA 版本不受影响），并支持 **Ctrl+Shift+N** 快捷键。窗口通过 Tauri 的 `WebviewWindow` API 创建，使用稳定且可复用的标签（`window-2`、`window-3`……）——每次选取最小空闲序号，因此重启应用后再次打开「第二个窗口」时，会恢复它之前的配置。同时在 `src-tauri/Cargo.toml` 中启用 `window-create` 特性，并在 `tauri.conf.json` 的 allowlist 中开启 `window.create: true`。
+- **按窗口隔离状态：** 新增 `app/utils/window.ts`，在模块初始化时通过 `window_label` 查询参数同步读取窗口标签（store 在 import 时即开始 hydrate），主窗口和 Web 版本回退为 `main`。`app/utils/indexedDB-storage.ts` 为每个持久化的 zustand store 键添加窗口命名空间前缀，统一隔离各窗口的服务器配置、应用配置、聊天、面具、提示词、同步和 MCP 等 store，同时避免多个窗口并发写入同一个 IndexedDB 键产生竞争。
+- **向后兼容：** 主窗口继续使用历史上不带前缀的存储键，所有既有用户数据（设置、聊天记录）完全保留、不受影响。在子窗口中执行 `clear()` 只会清理该窗口自己的命名空间；主窗口的清理仍然是全局重置。
+- **类型与国际化：** 在 `app/global.d.ts` 中扩展了 `__TAURI__` 全局类型，补充 `window` 模块（`getAll`、`WebviewWindow`）；在 `en` 和 `cn` 中添加 `Locale.UI.NewWindow` 文案（其他语言通过现有 merge 机制回退到英文）；新增 16×16 风格的 `new-window.svg` 图标。
 
 #### 📝 补充信息 | Additional Information
 
-**How to test:**
+**测试方法：**
 
-1. `yarn app:dev` (or a packaged build).
-2. Click the new-window icon in the sidebar footer, or press **Ctrl+Shift+N** — a second window titled `NextChat #2` opens.
-3. In window #2: Settings → set a custom endpoint (e.g. local vLLM `http://localhost:8000/v1`) and API key; confirm the main window still uses its own configuration.
-4. Send messages in both windows — each talks to its own backend; sessions/chat lists are independent.
-5. Close window #2 and open a new window again — the previous secondary configuration is restored (label recycling → same storage namespace).
-6. Restart the app — the main window loads all pre-existing data unchanged; a reopened second window restores its prior config.
-7. Web build (`yarn dev`): no new-window button is rendered and behavior is unchanged.
+1. 运行 `yarn app:dev`（或使用打包后的应用）。
+2. 点击侧边栏底部的新窗口图标，或按下 **Ctrl+Shift+N** —— 会打开标题为 `NextChat #2` 的第二个窗口。
+3. 在窗口 #2 中：设置 → 填写自定义接口地址（例如本地 vLLM 的 `http://localhost:8000/v1`）和 API Key；确认主窗口仍使用自己的配置。
+4. 在两个窗口中分别发送消息 —— 各自请求各自的后端；会话和聊天列表相互独立。
+5. 关闭窗口 #2 后再次打开新窗口 —— 之前的副窗口配置会被恢复（标签复用 → 相同的存储命名空间）。
+6. 重启应用 —— 主窗口完整加载所有既有数据；重新打开的第二个窗口恢复其之前的配置。
+7. Web 版本（`yarn dev`）：不会渲染新窗口按钮，行为保持不变。
 
-**Notes / limitations:**
+**注意事项 / 限制：**
 
-- True multi-*process* instances (Sandboxie, etc.) are out of scope; in-app windows cover the underlying need without the WebView2 crashes.
-- Window position/size persistence is handled by the existing `tauri-plugin-window-state`, keyed per window label.
-- `Ctrl+Shift+N` is registered at the webview level, so it works on all desktop platforms.
+- 真正的多*进程*实例（Sandboxie 等）不在本 PR 范围内；应用内多窗口已经覆盖了底层需求，且不会触发 WebView2 崩溃。
+- 窗口位置和大小的持久化由现有的 `tauri-plugin-window-state` 处理，按窗口标签分别保存。
+- `Ctrl+Shift+N` 在 webview 层注册，因此在所有桌面平台上均可用。
 
-**Validation:** `tsc --noEmit` against this branch shows only pre-existing errors from missing dependencies in the checkout; no new errors in any file touched by this PR. Runtime smoke-testing on Windows with `yarn app:dev` (window creation via `withGlobalTauri`, per-label window-state restore) is recommended before merging.
+**验证情况：** 在本分支上运行 `tsc --noEmit`，仅存在因本地未安装依赖导致的既有报错；本 PR 涉及的文件均未引入新错误。建议合并前在 Windows 上用 `yarn app:dev` 做一次运行时冒烟测试（验证 `withGlobalTauri` 下的窗口创建以及按标签恢复的窗口状态）。
